@@ -1,5 +1,5 @@
 {
-    "name": "mapbox-gl-style-switcher",
+    "name": "mapbox-v3-gl-style-switcher",
     "version": "1.0.12",
     "description": "Mapbox GL JS Style Switcher",
     "main": "dist/index.js",
@@ -10,7 +10,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/el/style-switcher.git"
+        "url": "git+https://github.com/deciosfernandes/style-switcher"
     },
     "keywords": [
         "mapbox",
@@ -20,9 +20,9 @@
     "author": "Eliz Kilic",
     "license": "GPL-3.0",
     "bugs": {
-        "url": "https://github.com/el/style-switcher/issues"
+        "url": "https://github.com/deciosfernandes/style-switcher/issues"
     },
-    "homepage": "https://github.com/el/style-switcher#readme",
+    "homepage": "https://github.com/deciosfernandes/style-switcher#readme",
     "dependencies": {
         "mapbox-gl": "^3.14.0"
     },
