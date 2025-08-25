@@ -1,6 +1,6 @@
 {
     "name": "mapbox-v3-gl-style-switcher",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "description": "Mapbox GL JS Style Switcher",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
