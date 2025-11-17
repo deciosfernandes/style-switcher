@@ -1,78 +1,141 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MapboxStyleSwitcherControl = void 0;
 class MapboxStyleSwitcherControl {
     constructor(styles, options) {
+        this.controlContainer = null;
+        this.map = null;
+        this.mapStyleContainer = null;
+        this.styleButton = null;
         this.styles = styles || MapboxStyleSwitcherControl.DEFAULT_STYLES;
-        const defaultStyle = typeof options === 'string' ? options : options ? options.defaultStyle : undefined;
-        this.defaultStyle = defaultStyle || MapboxStyleSwitcherControl.DEFAULT_STYLE;
+        const defaultStyle = typeof options === 'string' ? options : options === null || options === void 0 ? void 0 : options.defaultStyle;
+        this.defaultStyle = defaultStyle !== null && defaultStyle !== void 0 ? defaultStyle : MapboxStyleSwitcherControl.DEFAULT_STYLE;
+        this.events = typeof options !== 'string' ? options === null || options === void 0 ? void 0 : options.eventListeners : undefined;
         this.onDocumentClick = this.onDocumentClick.bind(this);
-        this.events = typeof options !== 'string' && options ? options.eventListeners : undefined;
+        this.validateDefaultStyle();
+    }
+    validateDefaultStyle() {
+        const styleExists = this.styles.some((style) => style.title === this.defaultStyle);
+        if (!styleExists) {
+            console.warn(`MapboxStyleSwitcherControl: Default style "${this.defaultStyle}" not found in styles array. ` +
+                `Available styles: ${this.styles.map((s) => s.title).join(', ')}`);
+        }
     }
     getDefaultPosition() {
-        const defaultPosition = 'top-right';
-        return defaultPosition;
+        return 'top-right';
     }
     onAdd(map) {
-        this.map = map;
-        this.controlContainer = document.createElement('div');
-        this.controlContainer.classList.add('mapboxgl-ctrl');
-        this.controlContainer.classList.add('mapboxgl-ctrl-group');
-        this.mapStyleContainer = document.createElement('div');
-        this.styleButton = document.createElement('button');
-        this.styleButton.type = 'button';
-        this.mapStyleContainer.classList.add('mapboxgl-style-list');
-        for (const style of this.styles) {
-            const styleElement = document.createElement('button');
-            styleElement.type = 'button';
-            styleElement.innerText = style.title;
-            styleElement.classList.add(style.title.replace(/[^a-z0-9-]/gi, '_'));
-            styleElement.dataset.uri = JSON.stringify(style.uri);
-            styleElement.addEventListener('click', (event) => {
-                const srcElement = event.srcElement;
-                this.closeModal();
-                if (srcElement.classList.contains('active')) {
-                    return;
-                }
-                if (this.events && this.events.onOpen && this.events.onOpen(event)) {
-                    return;
-                }
-                const style = JSON.parse(srcElement.dataset.uri);
-                this.map.setStyle(style);
-                const elms = this.mapStyleContainer.getElementsByClassName('active');
-                while (elms[0]) {
-                    elms[0].classList.remove('active');
-                }
-                srcElement.classList.add('active');
-                if (this.events && this.events.onChange && this.events.onChange(event, style)) {
-                    return;
-                }
-            });
-            if (style.title === this.defaultStyle) {
-                styleElement.classList.add('active');
-            }
-            this.mapStyleContainer.appendChild(styleElement);
+        if (!map) {
+            throw new Error('MapboxStyleSwitcherControl: Map instance is required');
         }
-        this.styleButton.classList.add('mapboxgl-ctrl-icon');
-        this.styleButton.classList.add('mapboxgl-style-switcher');
+        this.map = map;
+        this.controlContainer = this.createControlContainer();
+        this.mapStyleContainer = this.createStyleContainer();
+        this.styleButton = this.createStyleButton();
+        this.createStyleButtons();
+        this.setupEventListeners();
+        this.controlContainer.appendChild(this.styleButton);
+        this.controlContainer.appendChild(this.mapStyleContainer);
+        return this.controlContainer;
+    }
+    createControlContainer() {
+        const container = document.createElement('div');
+        container.classList.add('mapboxgl-ctrl', 'mapboxgl-ctrl-group');
+        return container;
+    }
+    createStyleContainer() {
+        const container = document.createElement('div');
+        container.classList.add('mapboxgl-style-list');
+        return container;
+    }
+    createStyleButton() {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.classList.add('mapboxgl-ctrl-icon', 'mapboxgl-style-switcher');
+        return button;
+    }
+    createStyleButtons() {
+        if (!this.mapStyleContainer) {
+            throw new Error('Style container not initialized');
+        }
+        for (const style of this.styles) {
+            try {
+                const styleButton = this.createIndividualStyleButton(style);
+                this.mapStyleContainer.appendChild(styleButton);
+            }
+            catch (error) {
+                console.error(`Failed to create style button for "${style.title}":`, error);
+            }
+        }
+    }
+    createIndividualStyleButton(style) {
+        const styleButton = document.createElement('button');
+        styleButton.type = 'button';
+        styleButton.innerText = style.title;
+        const safeClassName = style.title.replace(/[^a-z0-9-]/gi, '_');
+        styleButton.classList.add(safeClassName);
+        styleButton.dataset.uri = JSON.stringify(style.uri);
+        styleButton.addEventListener('click', (event) => {
+            this.handleStyleButtonClick(event, style);
+        });
+        if (style.title === this.defaultStyle) {
+            styleButton.classList.add('active');
+        }
+        return styleButton;
+    }
+    handleStyleButtonClick(event, style) {
+        var _a, _b, _c, _d;
+        const target = event.target;
+        this.closeModal();
+        if (target.classList.contains('active')) {
+            return;
+        }
+        if ((_b = (_a = this.events) === null || _a === void 0 ? void 0 : _a.onSelect) === null || _b === void 0 ? void 0 : _b.call(_a, event)) {
+            return;
+        }
+        try {
+            if (!this.map) {
+                throw new Error('Map instance not available');
+            }
+            this.map.setStyle(style.uri);
+            this.updateActiveStyleButton(target);
+            (_d = (_c = this.events) === null || _c === void 0 ? void 0 : _c.onChange) === null || _d === void 0 ? void 0 : _d.call(_c, event, style.uri);
+        }
+        catch (error) {
+            console.error('Failed to change map style:', error);
+        }
+    }
+    updateActiveStyleButton(newActiveButton) {
+        if (!this.mapStyleContainer) {
+            return;
+        }
+        const activeButtons = this.mapStyleContainer.querySelectorAll('.active');
+        activeButtons.forEach((button) => button.classList.remove('active'));
+        newActiveButton.classList.add('active');
+    }
+    setupEventListeners() {
+        if (!this.styleButton) {
+            throw new Error('Style button not initialized');
+        }
         this.styleButton.addEventListener('click', (event) => {
-            if (this.events && this.events.onSelect && this.events.onSelect(event)) {
+            var _a, _b;
+            if ((_b = (_a = this.events) === null || _a === void 0 ? void 0 : _a.onOpen) === null || _b === void 0 ? void 0 : _b.call(_a, event)) {
                 return;
             }
             this.openModal();
         });
         document.addEventListener('click', this.onDocumentClick);
-        this.controlContainer.appendChild(this.styleButton);
-        this.controlContainer.appendChild(this.mapStyleContainer);
-        return this.controlContainer;
     }
     onRemove() {
-        if (!this.controlContainer || !this.controlContainer.parentNode || !this.map || !this.styleButton) {
-            return;
-        }
-        this.styleButton.removeEventListener('click', this.onDocumentClick);
-        this.controlContainer.parentNode.removeChild(this.controlContainer);
+        var _a;
         document.removeEventListener('click', this.onDocumentClick);
-        this.map = undefined;
+        if ((_a = this.controlContainer) === null || _a === void 0 ? void 0 : _a.parentNode) {
+            this.controlContainer.parentNode.removeChild(this.controlContainer);
+        }
+        this.map = null;
+        this.controlContainer = null;
+        this.mapStyleContainer = null;
+        this.styleButton = null;
     }
     closeModal() {
         if (this.mapStyleContainer && this.styleButton) {
@@ -87,11 +150,52 @@ class MapboxStyleSwitcherControl {
         }
     }
     onDocumentClick(event) {
-        if (this.controlContainer && !this.controlContainer.contains(event.target)) {
+        const target = event.target;
+        if (this.controlContainer && !this.controlContainer.contains(target)) {
             this.closeModal();
         }
     }
+    getCurrentStyle() {
+        if (!this.mapStyleContainer) {
+            return null;
+        }
+        const activeButton = this.mapStyleContainer.querySelector('.active');
+        if (!activeButton || !activeButton.dataset.uri) {
+            return null;
+        }
+        try {
+            const uri = JSON.parse(activeButton.dataset.uri);
+            return this.styles.find((style) => style.uri === uri) || null;
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+    setStyle(styleName) {
+        const targetStyle = this.styles.find((style) => style.title === styleName);
+        if (!targetStyle || !this.map) {
+            return false;
+        }
+        try {
+            this.map.setStyle(targetStyle.uri);
+            if (this.mapStyleContainer) {
+                const targetButton = this.mapStyleContainer.querySelector(`[data-uri="${JSON.stringify(targetStyle.uri)}"]`);
+                if (targetButton) {
+                    this.updateActiveStyleButton(targetButton);
+                }
+            }
+            return true;
+        }
+        catch (error) {
+            console.error('Failed to set style programmatically:', error);
+            return false;
+        }
+    }
+    getStyles() {
+        return this.styles;
+    }
 }
+exports.MapboxStyleSwitcherControl = MapboxStyleSwitcherControl;
 MapboxStyleSwitcherControl.DEFAULT_STYLE = 'Streets';
 MapboxStyleSwitcherControl.DEFAULT_STYLES = [
     { title: 'Dark', uri: 'mapbox://styles/mapbox/dark-v10' },
@@ -100,5 +204,4 @@ MapboxStyleSwitcherControl.DEFAULT_STYLES = [
     { title: 'Satellite', uri: 'mapbox://styles/mapbox/satellite-streets-v11' },
     { title: 'Streets', uri: 'mapbox://styles/mapbox/streets-v11' },
 ];
-exports.MapboxStyleSwitcherControl = MapboxStyleSwitcherControl;
 //# sourceMappingURL=index.js.map

@@ -4,20 +4,18 @@
         "baseUrl": ".",
         "declaration": true,
         "experimentalDecorators": true,
-        "lib": [
-            "dom",
-            "es2017"
-        ],
+        "lib": ["dom", "es2020"],
         "module": "commonjs",
         "moduleResolution": "node",
         "noImplicitThis": true,
         "noUnusedLocals": true,
+        "noUnusedParameters": true,
         "outDir": "./dist/",
         "preserveConstEnums": true,
         "removeComments": true,
-        "strictFunctionTypes": true,
-        "strictNullChecks": true,
+        "skipLibCheck": true,
+        "strict": true,
         "sourceMap": true,
-        "target": "es6"
+        "target": "es2018"
     }
 }

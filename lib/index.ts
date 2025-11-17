@@ -1,118 +1,365 @@
 import { ControlPosition, IControl, Map as MapboxMap } from 'mapbox-gl';
 
-export type MapboxStyleDefinition = {
+/**
+ * Defines a Mapbox style configuration
+ */
+export interface MapboxStyleDefinition {
+    /** Display title for the style */
     title: string;
+    /** Mapbox style URI */
     uri: string;
-};
+}
 
-export type MapboxStyleSwitcherOptions = {
+/**
+ * Configuration options for the MapboxStyleSwitcherControl
+ */
+export interface MapboxStyleSwitcherOptions {
+    /** Default style to be selected on initialization */
     defaultStyle?: string;
+    /** Event listeners for style switcher interactions */
     eventListeners?: MapboxStyleSwitcherEvents;
-};
+}
 
-type MapboxStyleSwitcherEvents = {
+/**
+ * Event handlers for MapboxStyleSwitcherControl interactions
+ * All handlers return boolean - true to prevent default behavior
+ */
+export interface MapboxStyleSwitcherEvents {
+    /** Fired when the style selector is opened */
     onOpen?: (event: MouseEvent) => boolean;
+    /** Fired when a style button is clicked */
     onSelect?: (event: MouseEvent) => boolean;
+    /** Fired when the map style is changed */
     onChange?: (event: MouseEvent, style: string) => boolean;
-};
+}
 
+/**
+ * A Mapbox GL JS control that provides a style switcher interface.
+ * Allows users to switch between different map styles with a dropdown-style interface.
+ *
+ * @example
+ * ```typescript
+ * import { MapboxStyleSwitcherControl } from 'mapbox-v3-gl-style-switcher';
+ *
+ * const map = new MapboxMap({ ... });
+ * map.addControl(new MapboxStyleSwitcherControl());
+ * ```
+ */
 export class MapboxStyleSwitcherControl implements IControl {
+    /** Default style name when no custom default is provided */
     private static readonly DEFAULT_STYLE = 'Streets';
-    private static readonly DEFAULT_STYLES = [
+
+    /**
+     * Default Mapbox style definitions
+     * These are the standard Mapbox styles available by default
+     */
+    private static readonly DEFAULT_STYLES: ReadonlyArray<MapboxStyleDefinition> = [
         { title: 'Dark', uri: 'mapbox://styles/mapbox/dark-v10' },
         { title: 'Light', uri: 'mapbox://styles/mapbox/light-v10' },
         { title: 'Outdoors', uri: 'mapbox://styles/mapbox/outdoors-v11' },
         { title: 'Satellite', uri: 'mapbox://styles/mapbox/satellite-streets-v11' },
         { title: 'Streets', uri: 'mapbox://styles/mapbox/streets-v11' },
-    ];
+    ] as const;
 
-    private controlContainer: HTMLElement | undefined;
-    private events?: MapboxStyleSwitcherEvents;
-    private map?: MapboxMap;
-    private mapStyleContainer: HTMLElement | undefined;
-    private styleButton: HTMLButtonElement | undefined;
-    private styles: MapboxStyleDefinition[];
-    private defaultStyle: string;
+    /** Main container element for the control */
+    private controlContainer: HTMLElement | null = null;
 
+    /** Event listeners configuration */
+    private readonly events?: MapboxStyleSwitcherEvents;
+
+    /** Reference to the Mapbox map instance */
+    private map: MapboxMap | null = null;
+
+    /** Container for the style selection dropdown */
+    private mapStyleContainer: HTMLElement | null = null;
+
+    /** Main toggle button for the style switcher */
+    private styleButton: HTMLButtonElement | null = null;
+
+    /** Array of available styles */
+    private readonly styles: ReadonlyArray<MapboxStyleDefinition>;
+
+    /** Name of the default style */
+    private readonly defaultStyle: string;
+
+    /**
+     * Creates a new MapboxStyleSwitcherControl instance
+     *
+     * @param styles - Custom array of style definitions. If not provided, uses default Mapbox styles
+     * @param options - Configuration options or default style name (for backward compatibility)
+     *
+     * @example
+     * ```typescript
+     * // Using default styles with custom default
+     * const control = new MapboxStyleSwitcherControl(undefined, 'Dark');
+     *
+     * // Using custom styles with options
+     * const customStyles = [
+     *   { title: 'Custom Dark', uri: 'mapbox://styles/username/style-id' }
+     * ];
+     * const control = new MapboxStyleSwitcherControl(customStyles, {
+     *   defaultStyle: 'Custom Dark',
+     *   eventListeners: {
+     *     onChange: (event, style) => console.log('Style changed to:', style)
+     *   }
+     * });
+     * ```
+     */
     constructor(styles?: MapboxStyleDefinition[], options?: MapboxStyleSwitcherOptions | string) {
         this.styles = styles || MapboxStyleSwitcherControl.DEFAULT_STYLES;
-        const defaultStyle = typeof options === 'string' ? options : options ? options.defaultStyle : undefined;
-        this.defaultStyle = defaultStyle || MapboxStyleSwitcherControl.DEFAULT_STYLE;
+
+        // Handle backward compatibility - options can be a string (defaultStyle) or options object
+        const defaultStyle = typeof options === 'string' ? options : options?.defaultStyle;
+        this.defaultStyle = defaultStyle ?? MapboxStyleSwitcherControl.DEFAULT_STYLE;
+
+        // Extract event listeners from options (only if options is not a string)
+        this.events = typeof options !== 'string' ? options?.eventListeners : undefined; // Bind event handler to maintain proper 'this' context
         this.onDocumentClick = this.onDocumentClick.bind(this);
-        this.events = typeof options !== 'string' && options ? options.eventListeners : undefined;
+
+        // Validate that the default style exists in the provided styles
+        this.validateDefaultStyle();
     }
 
-    public getDefaultPosition(): ControlPosition {
-        const defaultPosition: ControlPosition = 'top-right';
-        return defaultPosition;
-    }
-
-    public onAdd(map: MapboxMap): HTMLElement {
-        this.map = map;
-        this.controlContainer = document.createElement('div');
-        this.controlContainer.classList.add('mapboxgl-ctrl');
-        this.controlContainer.classList.add('mapboxgl-ctrl-group');
-        this.mapStyleContainer = document.createElement('div');
-        this.styleButton = document.createElement('button');
-        this.styleButton.type = 'button';
-        this.mapStyleContainer.classList.add('mapboxgl-style-list');
-        for (const style of this.styles) {
-            const styleElement = document.createElement('button');
-            styleElement.type = 'button';
-            styleElement.innerText = style.title;
-            styleElement.classList.add(style.title.replace(/[^a-z0-9-]/gi, '_'));
-            styleElement.dataset.uri = JSON.stringify(style.uri);
-            styleElement.addEventListener('click', (event) => {
-                const srcElement = event.srcElement as HTMLButtonElement;
-                this.closeModal();
-                if (srcElement.classList.contains('active')) {
-                    return;
-                }
-                if (this.events && this.events.onOpen && this.events.onOpen(event)) {
-                    return;
-                }
-                const style = JSON.parse(srcElement.dataset.uri!);
-                this.map!.setStyle(style);
-                const elms = this.mapStyleContainer!.getElementsByClassName('active');
-                while (elms[0]) {
-                    elms[0].classList.remove('active');
-                }
-                srcElement.classList.add('active');
-                if (this.events && this.events.onChange && this.events.onChange(event, style)) {
-                    return;
-                }
-            });
-            if (style.title === this.defaultStyle) {
-                styleElement.classList.add('active');
-            }
-            this.mapStyleContainer.appendChild(styleElement);
+    /**
+     * Validates that the specified default style exists in the styles array
+     * @private
+     */
+    private validateDefaultStyle(): void {
+        const styleExists = this.styles.some((style) => style.title === this.defaultStyle);
+        if (!styleExists) {
+            console.warn(
+                `MapboxStyleSwitcherControl: Default style "${this.defaultStyle}" not found in styles array. ` +
+                    `Available styles: ${this.styles.map((s) => s.title).join(', ')}`
+            );
         }
-        this.styleButton.classList.add('mapboxgl-ctrl-icon');
-        this.styleButton.classList.add('mapboxgl-style-switcher');
+    }
+
+    /**
+     * Returns the default position for this control on the map
+     * Part of the IControl interface implementation
+     *
+     * @returns The default control position ('top-right')
+     */
+    public getDefaultPosition(): ControlPosition {
+        return 'top-right';
+    }
+
+    /**
+     * Called when the control is added to a map
+     * Part of the IControl interface implementation
+     *
+     * @param map - The Mapbox map instance
+     * @returns The HTML element representing this control
+     * @throws Error if control initialization fails
+     */
+    public onAdd(map: MapboxMap): HTMLElement {
+        if (!map) {
+            throw new Error('MapboxStyleSwitcherControl: Map instance is required');
+        }
+
+        this.map = map;
+
+        // Create main control container
+        this.controlContainer = this.createControlContainer();
+
+        // Create style selection dropdown container
+        this.mapStyleContainer = this.createStyleContainer();
+
+        // Create main toggle button
+        this.styleButton = this.createStyleButton();
+
+        // Create style selection buttons
+        this.createStyleButtons();
+
+        // Set up event listeners
+        this.setupEventListeners();
+
+        // Assemble the control
+        this.controlContainer.appendChild(this.styleButton);
+        this.controlContainer.appendChild(this.mapStyleContainer);
+
+        return this.controlContainer;
+    }
+
+    /**
+     * Creates the main control container element
+     * @private
+     */
+    private createControlContainer(): HTMLElement {
+        const container = document.createElement('div');
+        container.classList.add('mapboxgl-ctrl', 'mapboxgl-ctrl-group');
+        return container;
+    }
+
+    /**
+     * Creates the style selection dropdown container
+     * @private
+     */
+    private createStyleContainer(): HTMLElement {
+        const container = document.createElement('div');
+        container.classList.add('mapboxgl-style-list');
+        return container;
+    }
+
+    /**
+     * Creates the main toggle button
+     * @private
+     */
+    private createStyleButton(): HTMLButtonElement {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.classList.add('mapboxgl-ctrl-icon', 'mapboxgl-style-switcher');
+        return button;
+    }
+
+    /**
+     * Creates individual style selection buttons
+     * @private
+     */
+    private createStyleButtons(): void {
+        if (!this.mapStyleContainer) {
+            throw new Error('Style container not initialized');
+        }
+        for (const style of this.styles) {
+            try {
+                const styleButton = this.createIndividualStyleButton(style);
+                this.mapStyleContainer.appendChild(styleButton);
+            } catch (error) {
+                console.error(`Failed to create style button for "${style.title}":`, error);
+            }
+        }
+    }
+
+    /**
+     * Creates an individual style selection button
+     * @private
+     */
+    private createIndividualStyleButton(style: MapboxStyleDefinition): HTMLButtonElement {
+        const styleButton = document.createElement('button');
+        styleButton.type = 'button';
+        styleButton.innerText = style.title;
+
+        // Create CSS-safe class name from title
+        const safeClassName = style.title.replace(/[^a-z0-9-]/gi, '_');
+        styleButton.classList.add(safeClassName);
+
+        // Store style URI in dataset
+        styleButton.dataset.uri = JSON.stringify(style.uri);
+
+        // Set up click event handler
+        styleButton.addEventListener('click', (event) => {
+            this.handleStyleButtonClick(event, style);
+        });
+
+        // Mark as active if this is the default style
+        if (style.title === this.defaultStyle) {
+            styleButton.classList.add('active');
+        }
+
+        return styleButton;
+    }
+
+    /**
+     * Handles click events on style selection buttons
+     * @private
+     */
+    private handleStyleButtonClick(event: MouseEvent, style: MapboxStyleDefinition): void {
+        const target = event.target as HTMLButtonElement;
+
+        // Close the dropdown
+        this.closeModal();
+
+        // Don't do anything if this style is already active
+        if (target.classList.contains('active')) {
+            return;
+        }
+
+        // Call onSelect event handler if provided
+        if (this.events?.onSelect?.(event)) {
+            return; // Event handler returned true, stop processing
+        }
+
+        try {
+            // Change the map style
+            if (!this.map) {
+                throw new Error('Map instance not available');
+            }
+
+            this.map.setStyle(style.uri);
+
+            // Update active state
+            this.updateActiveStyleButton(target);
+
+            // Call onChange event handler if provided
+            this.events?.onChange?.(event, style.uri);
+        } catch (error) {
+            console.error('Failed to change map style:', error);
+        }
+    }
+
+    /**
+     * Updates the active state of style buttons
+     * @private
+     */
+    private updateActiveStyleButton(newActiveButton: HTMLButtonElement): void {
+        if (!this.mapStyleContainer) {
+            return;
+        }
+
+        // Remove active class from all buttons
+        const activeButtons = this.mapStyleContainer.querySelectorAll('.active');
+        activeButtons.forEach((button) => button.classList.remove('active'));
+
+        // Add active class to the new button
+        newActiveButton.classList.add('active');
+    }
+
+    /**
+     * Sets up event listeners for the control
+     * @private
+     */
+    private setupEventListeners(): void {
+        if (!this.styleButton) {
+            throw new Error('Style button not initialized');
+        }
+
+        // Handle main button click (opens/closes dropdown)
         this.styleButton.addEventListener('click', (event) => {
-            if (this.events && this.events.onSelect && this.events.onSelect(event)) {
-                return;
+            // Call onOpen event handler if provided
+            if (this.events?.onOpen?.(event)) {
+                return; // Event handler returned true, stop processing
             }
             this.openModal();
         });
 
+        // Handle clicks outside the control (closes dropdown)
         document.addEventListener('click', this.onDocumentClick);
-
-        this.controlContainer.appendChild(this.styleButton);
-        this.controlContainer.appendChild(this.mapStyleContainer);
-        return this.controlContainer;
     }
-
+    /**
+     * Called when the control is removed from a map
+     * Part of the IControl interface implementation
+     * Cleans up event listeners and DOM elements
+     */
     public onRemove(): void {
-        if (!this.controlContainer || !this.controlContainer.parentNode || !this.map || !this.styleButton) {
-            return;
-        }
-        this.styleButton.removeEventListener('click', this.onDocumentClick);
-        this.controlContainer.parentNode.removeChild(this.controlContainer);
+        // Remove document event listener
         document.removeEventListener('click', this.onDocumentClick);
-        this.map = undefined;
+
+        // Remove control from DOM if it exists
+        if (this.controlContainer?.parentNode) {
+            this.controlContainer.parentNode.removeChild(this.controlContainer);
+        }
+
+        // Clean up references
+        this.map = null;
+        this.controlContainer = null;
+        this.mapStyleContainer = null;
+        this.styleButton = null;
     }
 
+    /**
+     * Closes the style selection dropdown
+     * @private
+     */
     private closeModal(): void {
         if (this.mapStyleContainer && this.styleButton) {
             this.mapStyleContainer.style.display = 'none';
@@ -120,6 +367,10 @@ export class MapboxStyleSwitcherControl implements IControl {
         }
     }
 
+    /**
+     * Opens the style selection dropdown
+     * @private
+     */
     private openModal(): void {
         if (this.mapStyleContainer && this.styleButton) {
             this.mapStyleContainer.style.display = 'block';
@@ -127,9 +378,78 @@ export class MapboxStyleSwitcherControl implements IControl {
         }
     }
 
+    /**
+     * Handles clicks outside the control to close the dropdown
+     * @private
+     */
     private onDocumentClick(event: MouseEvent): void {
-        if (this.controlContainer && !this.controlContainer.contains(event.target as Element)) {
+        const target = event.target as Element;
+
+        // Close modal if click is outside the control container
+        if (this.controlContainer && !this.controlContainer.contains(target)) {
             this.closeModal();
         }
+    }
+
+    /**
+     * Gets the currently active style
+     * @returns The currently active style definition, or null if none is active
+     */
+    public getCurrentStyle(): MapboxStyleDefinition | null {
+        if (!this.mapStyleContainer) {
+            return null;
+        }
+
+        const activeButton = this.mapStyleContainer.querySelector('.active') as HTMLButtonElement;
+        if (!activeButton || !activeButton.dataset.uri) {
+            return null;
+        }
+
+        try {
+            const uri = JSON.parse(activeButton.dataset.uri);
+            return this.styles.find((style) => style.uri === uri) || null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Programmatically sets the active style
+     * @param styleName - The name/title of the style to activate
+     * @returns True if the style was successfully set, false otherwise
+     */
+    public setStyle(styleName: string): boolean {
+        const targetStyle = this.styles.find((style) => style.title === styleName);
+        if (!targetStyle || !this.map) {
+            return false;
+        }
+
+        try {
+            this.map.setStyle(targetStyle.uri);
+
+            // Update UI to reflect the change
+            if (this.mapStyleContainer) {
+                const targetButton = this.mapStyleContainer.querySelector(
+                    `[data-uri="${JSON.stringify(targetStyle.uri)}"]`
+                ) as HTMLButtonElement;
+
+                if (targetButton) {
+                    this.updateActiveStyleButton(targetButton);
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Failed to set style programmatically:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Gets all available style definitions
+     * @returns Read-only array of all available styles
+     */
+    public getStyles(): ReadonlyArray<MapboxStyleDefinition> {
+        return this.styles;
     }
 }
