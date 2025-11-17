@@ -41,7 +41,7 @@ pnpm add mapbox-v3-gl-style-switcher
 ## 🎯 Quick Start
 
 ```typescript
-import { MapboxStyleSwitcherControl } from 'mapbox-v3-gl-style-switcher';
+import { MapboxStyleSwitcherControl } from '@deciosfernandes/mapbox-v3-gl-style-switcher';
 import { Map as MapboxMap } from 'mapbox-gl';
 
 // Import the CSS styles
@@ -77,7 +77,7 @@ The control includes these pre-configured Mapbox styles:
 ### Custom Styles
 
 ```typescript
-import { MapboxStyleDefinition, MapboxStyleSwitcherControl } from 'mapbox-v3-gl-style-switcher';
+import { MapboxStyleDefinition, MapboxStyleSwitcherControl } from '@deciosfernandes/mapbox-v3-gl-style-switcher';
 
 const customStyles: MapboxStyleDefinition[] = [
     {
@@ -100,7 +100,7 @@ map.addControl(new MapboxStyleSwitcherControl(customStyles));
 ### Advanced Configuration
 
 ```typescript
-import { MapboxStyleSwitcherOptions } from 'mapbox-v3-gl-style-switcher';
+import { MapboxStyleSwitcherOptions } from '@deciosfernandes/mapbox-v3-gl-style-switcher';
 
 const options: MapboxStyleSwitcherOptions = {
     defaultStyle: 'Custom Dark',
@@ -288,7 +288,7 @@ class MapManager {
 ```tsx
 import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { MapboxStyleSwitcherControl } from 'mapbox-v3-gl-style-switcher';
+import { MapboxStyleSwitcherControl } from '@deciosfernandes/mapbox-v3-gl-style-switcher';
 
 const MapComponent: React.FC = () => {
     const mapContainer = useRef<HTMLDivElement>(null);
@@ -344,7 +344,7 @@ export default MapComponent;
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import mapboxgl from 'mapbox-gl';
-import { MapboxStyleSwitcherControl } from 'mapbox-v3-gl-style-switcher';
+import { MapboxStyleSwitcherControl } from '@deciosfernandes/mapbox-v3-gl-style-switcher';
 
 const mapContainer = ref<HTMLDivElement>();
 let map: mapboxgl.Map | null = null;
