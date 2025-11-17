@@ -11,7 +11,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/deciosfernandes/style-switcher"
+        "url": "git+https://github.com/deciosfernandes/style-switcher.git"
     },
     "keywords": [
         "mapbox",
@@ -36,8 +36,5 @@
         "@types/mapbox-gl": "^3.4.1",
         "minimist": "^1.2.8",
         "typescript": "^5.9.3"
-    },
-    "publishConfig": {
-        "registry": "https://npm.pkg.github.com/"
     }
 }
