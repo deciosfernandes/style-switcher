@@ -21,15 +21,15 @@ A modern, fully-typed TypeScript control for Mapbox GL JS that provides an intui
 ## 🚀 Installation
 
 ```bash
-npm install mapbox-v3-gl-style-switcher --save
+npm i @deciosfernandes/mapbox-v3-gl-style-switcher --save
 ```
 
 ```bash
-yarn add mapbox-v3-gl-style-switcher
+yarn add @deciosfernandes/mapbox-v3-gl-style-switcher
 ```
 
 ```bash
-pnpm add mapbox-v3-gl-style-switcher
+pnpm add @deciosfernandes/mapbox-v3-gl-style-switcher
 ```
 
 ## 📋 Requirements
@@ -461,19 +461,9 @@ This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) 
 
 ## 🙏 Acknowledgments
 
--   Original concept by [Eliz Kilic](https://github.com/elizkilic)
+-   Original concept by [Eliz Kilic](https://github.com/el/)
 -   Built for the [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) ecosystem
 -   TypeScript definitions inspired by the Mapbox GL JS type definitions
-
-## 📸 Screenshots
-
-### Closed State
-
-![Closed](assets/closed.png)
-
-### Open State
-
-![Open](assets/open.png)
 
 ---
 
