@@ -2,10 +2,10 @@
 
 A modern, fully-typed TypeScript control for Mapbox GL JS that provides an intuitive dropdown-style interface for switching between map styles.
 
-[![Bundle Size](https://img.shields.io/bundlephobia/min/mapbox-v3-gl-style-switcher)](https://bundlephobia.com/package/mapbox-v3-gl-style-switcher)
-[![npm version](https://img.shields.io/npm/v/mapbox-v3-gl-style-switcher)](https://www.npmjs.com/package/mapbox-v3-gl-style-switcher)
-[![TypeScript](https://img.shields.io/npm/types/mapbox-v3-gl-style-switcher)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/npm/l/mapbox-v3-gl-style-switcher)](https://github.com/deciosfernandes/style-switcher/blob/master/LICENSE)
+[![Bundle Size](https://img.shields.io/bundlephobia/min/@deciosfernandes/mapbox-v3-gl-style-switcher)](https://bundlephobia.com/package/@deciosfernandes/mapbox-v3-gl-style-switcher)
+[![npm version](https://img.shields.io/npm/v/@deciosfernandes/mapbox-v3-gl-style-switcher)](https://www.npmjs.com/package/@deciosfernandes/mapbox-v3-gl-style-switcher)
+[![TypeScript](https://img.shields.io/npm/types/@deciosfernandes/mapbox-v3-gl-style-switcher)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/npm/l/@deciosfernandes/mapbox-v3-gl-style-switcher)](https://github.com/deciosfernandes/style-switcher/blob/master/LICENSE)
 
 ## ✨ Features
 
