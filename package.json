@@ -1,6 +1,6 @@
 {
     "name": "@deciosfernandes/mapbox-v3-gl-style-switcher",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "A modern, fully-typed TypeScript control for Mapbox GL JS with dropdown-style interface for switching between map styles",
     "type": "module",
     "main": "dist/index.js",
