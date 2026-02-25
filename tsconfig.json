@@ -15,7 +15,8 @@
         "removeComments": true,
         "skipLibCheck": true,
         "strict": true,
-        "sourceMap": true,
+        "sourceMap": false,
         "target": "ES2020"
-    }
+    },
+    "exclude": ["dist", "**/*.test.ts", "**/*.spec.ts", "vitest.config.ts"]
 }

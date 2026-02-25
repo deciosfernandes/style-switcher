@@ -9,14 +9,14 @@ A modern, fully-typed TypeScript control for Mapbox GL JS that provides an intui
 
 ## ✨ Features
 
--   🎨 **Pre-configured styles** - Comes with 5 popular Mapbox styles out of the box
--   🔧 **Fully customizable** - Use your own styles and configurations
--   🎯 **TypeScript first** - Built with modern TypeScript, full type safety
--   📱 **Responsive design** - Works seamlessly on desktop and mobile
--   🎪 **Event-driven** - Rich event system for custom interactions
--   🚀 **Modern syntax** - Leverages optional chaining and nullish coalescing
--   🛡️ **Error resilient** - Robust error handling and validation
--   📦 **Zero dependencies** - Only requires Mapbox GL JS
+- 🎨 **Pre-configured styles** - Comes with 5 popular Mapbox styles out of the box
+- 🔧 **Fully customizable** - Use your own styles and configurations
+- 🎯 **TypeScript first** - Built with modern TypeScript, full type safety
+- 📱 **Responsive design** - Works seamlessly on desktop and mobile
+- 🎪 **Event-driven** - Rich event system for custom interactions
+- 🚀 **Modern syntax** - Leverages optional chaining and nullish coalescing
+- 🛡️ **Error resilient** - Robust error handling and validation
+- 📦 **Zero dependencies** - Only requires Mapbox GL JS
 
 ## 🚀 Installation
 
@@ -34,9 +34,9 @@ pnpm add @deciosfernandes/mapbox-v3-gl-style-switcher
 
 ## 📋 Requirements
 
--   **Mapbox GL JS** v3.x
--   **TypeScript** 5.0+ (for TypeScript projects)
--   **Node.js** 16+ (for development)
+- **Mapbox GL JS** v3.x
+- **TypeScript** 5.0+ (for TypeScript projects)
+- **Node.js** 16+ (for development)
 
 ## 🎯 Quick Start
 
@@ -45,13 +45,13 @@ import { MapboxStyleSwitcherControl } from '@deciosfernandes/mapbox-v3-gl-style-
 import { Map as MapboxMap } from 'mapbox-gl';
 
 // Import the CSS styles
-import 'mapbox-v3-gl-style-switcher/styles.css';
+import '@deciosfernandes/mapbox-v3-gl-style-switcher/styles.css';
 
 // Create your map
 const map = new MapboxMap({
     container: 'map',
     accessToken: 'your-mapbox-token',
-    style: 'mapbox://styles/mapbox/streets-v11',
+    style: 'mapbox://styles/mapbox/streets-v12',
     center: [-74.5, 40],
     zoom: 9,
 });
@@ -66,11 +66,11 @@ The control includes these pre-configured Mapbox styles:
 
 | Style Name    | Description                    | URI                                            |
 | ------------- | ------------------------------ | ---------------------------------------------- |
-| **Streets**   | Standard street map (default)  | `mapbox://styles/mapbox/streets-v11`           |
-| **Light**     | Clean, minimal light theme     | `mapbox://styles/mapbox/light-v10`             |
-| **Dark**      | Elegant dark theme             | `mapbox://styles/mapbox/dark-v10`              |
-| **Outdoors**  | Perfect for outdoor activities | `mapbox://styles/mapbox/outdoors-v11`          |
-| **Satellite** | Satellite imagery with streets | `mapbox://styles/mapbox/satellite-streets-v11` |
+| **Streets**   | Standard street map (default)  | `mapbox://styles/mapbox/streets-v12`           |
+| **Light**     | Clean, minimal light theme     | `mapbox://styles/mapbox/light-v11`             |
+| **Dark**      | Elegant dark theme             | `mapbox://styles/mapbox/dark-v11`              |
+| **Outdoors**  | Perfect for outdoor activities | `mapbox://styles/mapbox/outdoors-v12`          |
+| **Satellite** | Satellite imagery with streets | `mapbox://styles/mapbox/satellite-streets-v12` |
 
 ## 🔧 Configuration
 
@@ -118,7 +118,6 @@ const options: MapboxStyleSwitcherOptions = {
             console.log(`Map style changed to: ${styleUri}`);
             // Analytics tracking example
             analytics.track('style_changed', { style: styleUri });
-            return false;
         },
     },
 };
@@ -148,8 +147,8 @@ constructor(
 
 **Parameters:**
 
--   `styles` - Optional array of custom style definitions. Defaults to built-in Mapbox styles
--   `options` - Configuration options object, or string for backward compatibility (default style name)
+- `styles` - Optional array of custom style definitions. Defaults to built-in Mapbox styles
+- `options` - Configuration options object, or string for backward compatibility (default style name)
 
 #### Public Methods
 
@@ -187,7 +186,7 @@ Returns all available style definitions.
 const availableStyles = control.getStyles();
 console.log(
     'Available styles:',
-    availableStyles.map((s) => s.title)
+    availableStyles.map((s) => s.title),
 );
 ```
 
@@ -227,15 +226,17 @@ interface MapboxStyleSwitcherEvents {
     onOpen?: (event: MouseEvent) => boolean;
     /** Fired when a style button is clicked */
     onSelect?: (event: MouseEvent) => boolean;
-    /** Fired when the map style is changed */
-    onChange?: (event: MouseEvent, style: string) => boolean;
+    /** Fired after the map style is changed */
+    onChange?: (event: MouseEvent, style: string) => void;
 }
 ```
 
-**Event Handler Return Values:**
+**Event Handler Return Values (`onOpen`, `onSelect`):**
 
--   Return `true` to prevent the default behavior
--   Return `false` or `undefined` to allow normal processing
+- Return `true` to prevent the default behavior
+- Return `false` or `undefined` to allow normal processing
+
+> `onChange` fires **after** the style has already changed and has no return value.
 
 ## 💡 Advanced Examples
 
@@ -268,11 +269,10 @@ class MapManager {
         ];
     }
 
-    private handleStyleChange(event: MouseEvent, styleUri: string): boolean {
+    private handleStyleChange(event: MouseEvent, styleUri: string): void {
         // Custom logic when style changes
         this.updateUI(styleUri);
         this.saveUserPreference(styleUri);
-        return false;
     }
 
     public switchToAnalysisMode(): void {
@@ -299,7 +299,7 @@ const MapComponent: React.FC = () => {
 
         map.current = new mapboxgl.Map({
             container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/streets-v11',
+            style: 'mapbox://styles/mapbox/streets-v12',
             center: [-74.5, 40],
             zoom: 9,
         });
@@ -309,7 +309,6 @@ const MapComponent: React.FC = () => {
             eventListeners: {
                 onChange: (event, style) => {
                     console.log('React: Style changed to', style);
-                    return false;
                 },
             },
         });
@@ -354,7 +353,7 @@ onMounted(() => {
 
     map = new mapboxgl.Map({
         container: mapContainer.value,
-        style: 'mapbox://styles/mapbox/streets-v11',
+        style: 'mapbox://styles/mapbox/streets-v12',
         center: [-74.5, 40],
         zoom: 9,
     });
@@ -407,11 +406,6 @@ The control uses CSS classes that can be customized:
 }
 ```
 
-## 🔍 Demo & Examples
-
--   📝 [CodeSandbox Demo](https://codesandbox.io/s/elegant-night-wi9v4) - Interactive demo
--   🎮 [GitHub Pages Examples](https://deciosfernandes.github.io/style-switcher/) - Comprehensive examples
-
 ## 🛠️ Development
 
 ### Setup
@@ -432,10 +426,10 @@ npm run build
 
 The project uses modern TypeScript 5.9.3 with:
 
--   Optional chaining and nullish coalescing
--   Strict type checking
--   ES2018 target with ES2020 library features
--   Comprehensive JSDoc documentation
+- Optional chaining and nullish coalescing
+- Strict type checking
+- ES2020 target with full ES2020 library features
+- Comprehensive JSDoc documentation
 
 ## 🤝 Contributing
 
@@ -449,11 +443,11 @@ Contributions are welcome! Please read our contributing guidelines:
 
 ### Development Guidelines
 
--   Follow TypeScript strict mode conventions
--   Add JSDoc comments for public APIs
--   Include unit tests for new features
--   Update documentation for API changes
--   Ensure backward compatibility when possible
+- Follow TypeScript strict mode conventions
+- Add JSDoc comments for public APIs
+- Include unit tests for new features
+- Update documentation for API changes
+- Ensure backward compatibility when possible
 
 ## 📄 License
 
@@ -461,9 +455,9 @@ This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) 
 
 ## 🙏 Acknowledgments
 
--   Original concept by [Eliz Kilic](https://github.com/el/)
--   Built for the [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) ecosystem
--   TypeScript definitions inspired by the Mapbox GL JS type definitions
+- Original concept by [Eliz Kilic](https://github.com/el/)
+- Built for the [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) ecosystem
+- TypeScript definitions inspired by the Mapbox GL JS type definitions
 
 ---
 

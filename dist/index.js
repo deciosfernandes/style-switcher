@@ -43,12 +43,16 @@ export class MapboxStyleSwitcherControl {
     createStyleContainer() {
         const container = document.createElement('div');
         container.classList.add('mapboxgl-style-list');
+        container.setAttribute('role', 'menu');
         return container;
     }
     createStyleButton() {
         const button = document.createElement('button');
         button.type = 'button';
         button.classList.add('mapboxgl-ctrl-icon', 'mapboxgl-style-switcher');
+        button.setAttribute('aria-label', 'Switch map style');
+        button.setAttribute('aria-haspopup', 'true');
+        button.setAttribute('aria-expanded', 'false');
         return button;
     }
     createStyleButtons() {
@@ -68,10 +72,11 @@ export class MapboxStyleSwitcherControl {
     createIndividualStyleButton(style) {
         const styleButton = document.createElement('button');
         styleButton.type = 'button';
-        styleButton.innerText = style.title;
+        styleButton.setAttribute('role', 'menuitem');
+        styleButton.textContent = style.title;
         const safeClassName = style.title.replace(/[^a-z0-9-]/gi, '_');
         styleButton.classList.add(safeClassName);
-        styleButton.dataset.uri = JSON.stringify(style.uri);
+        styleButton.dataset.uri = style.uri;
         styleButton.addEventListener('click', (event) => {
             this.handleStyleButtonClick(event, style);
         });
@@ -120,6 +125,31 @@ export class MapboxStyleSwitcherControl {
             this.openModal();
         });
         document.addEventListener('click', this.onDocumentClick);
+        this.setupKeyboardNavigation();
+    }
+    setupKeyboardNavigation() {
+        if (!this.mapStyleContainer) {
+            return;
+        }
+        this.mapStyleContainer.addEventListener('keydown', (event) => {
+            const buttons = Array.from(this.mapStyleContainer.querySelectorAll('button'));
+            const focusedIndex = buttons.findIndex((btn) => btn === document.activeElement);
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    buttons[(focusedIndex + 1) % buttons.length]?.focus();
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    buttons[(focusedIndex - 1 + buttons.length) % buttons.length]?.focus();
+                    break;
+                case 'Escape':
+                    event.preventDefault();
+                    this.closeModal();
+                    this.styleButton?.focus();
+                    break;
+            }
+        });
     }
     onRemove() {
         document.removeEventListener('click', this.onDocumentClick);
@@ -135,12 +165,17 @@ export class MapboxStyleSwitcherControl {
         if (this.mapStyleContainer && this.styleButton) {
             this.mapStyleContainer.style.display = 'none';
             this.styleButton.style.display = 'block';
+            this.styleButton.setAttribute('aria-expanded', 'false');
         }
     }
     openModal() {
         if (this.mapStyleContainer && this.styleButton) {
             this.mapStyleContainer.style.display = 'block';
             this.styleButton.style.display = 'none';
+            this.styleButton.setAttribute('aria-expanded', 'true');
+            const activeButton = this.mapStyleContainer.querySelector('button.active');
+            const firstButton = this.mapStyleContainer.querySelector('button');
+            (activeButton ?? firstButton)?.focus();
         }
     }
     onDocumentClick(event) {
@@ -157,13 +192,11 @@ export class MapboxStyleSwitcherControl {
         if (!activeButton || !activeButton.dataset.uri) {
             return null;
         }
-        try {
-            const uri = JSON.parse(activeButton.dataset.uri);
-            return this.styles.find((style) => style.uri === uri) || null;
-        }
-        catch {
+        const uri = activeButton.dataset.uri;
+        if (!uri) {
             return null;
         }
+        return this.styles.find((style) => style.uri === uri) || null;
     }
     setStyle(styleName) {
         const targetStyle = this.styles.find((style) => style.title === styleName);
@@ -173,7 +206,7 @@ export class MapboxStyleSwitcherControl {
         try {
             this.map.setStyle(targetStyle.uri);
             if (this.mapStyleContainer) {
-                const targetButton = this.mapStyleContainer.querySelector(`[data-uri="${JSON.stringify(targetStyle.uri)}"]`);
+                const targetButton = Array.from(this.mapStyleContainer.querySelectorAll('button')).find((btn) => btn.dataset.uri === targetStyle.uri);
                 if (targetButton) {
                     this.updateActiveStyleButton(targetButton);
                 }
@@ -191,10 +224,9 @@ export class MapboxStyleSwitcherControl {
 }
 MapboxStyleSwitcherControl.DEFAULT_STYLE = 'Streets';
 MapboxStyleSwitcherControl.DEFAULT_STYLES = [
-    { title: 'Dark', uri: 'mapbox://styles/mapbox/dark-v10' },
-    { title: 'Light', uri: 'mapbox://styles/mapbox/light-v10' },
-    { title: 'Outdoors', uri: 'mapbox://styles/mapbox/outdoors-v11' },
-    { title: 'Satellite', uri: 'mapbox://styles/mapbox/satellite-streets-v11' },
-    { title: 'Streets', uri: 'mapbox://styles/mapbox/streets-v11' },
+    { title: 'Dark', uri: 'mapbox://styles/mapbox/dark-v11' },
+    { title: 'Light', uri: 'mapbox://styles/mapbox/light-v11' },
+    { title: 'Outdoors', uri: 'mapbox://styles/mapbox/outdoors-v12' },
+    { title: 'Satellite', uri: 'mapbox://styles/mapbox/satellite-streets-v12' },
+    { title: 'Streets', uri: 'mapbox://styles/mapbox/streets-v12' },
 ];
-//# sourceMappingURL=index.js.map

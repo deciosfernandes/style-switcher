@@ -22,15 +22,16 @@ export interface MapboxStyleSwitcherOptions {
 
 /**
  * Event handlers for MapboxStyleSwitcherControl interactions
- * All handlers return boolean - true to prevent default behavior
+ * onOpen and onSelect return boolean - true to prevent default behavior.
+ * onChange fires after the style has been changed.
  */
 export interface MapboxStyleSwitcherEvents {
     /** Fired when the style selector is opened */
     onOpen?: (event: MouseEvent) => boolean;
     /** Fired when a style button is clicked */
     onSelect?: (event: MouseEvent) => boolean;
-    /** Fired when the map style is changed */
-    onChange?: (event: MouseEvent, style: string) => boolean;
+    /** Fired after the map style is changed */
+    onChange?: (event: MouseEvent, style: string) => void;
 }
 
 /**
@@ -39,7 +40,7 @@ export interface MapboxStyleSwitcherEvents {
  *
  * @example
  * ```typescript
- * import { MapboxStyleSwitcherControl } from 'mapbox-v3-gl-style-switcher';
+ * import { MapboxStyleSwitcherControl } from '@deciosfernandes/mapbox-v3-gl-style-switcher';
  *
  * const map = new MapboxMap({ ... });
  * map.addControl(new MapboxStyleSwitcherControl());
@@ -54,11 +55,11 @@ export class MapboxStyleSwitcherControl implements IControl {
      * These are the standard Mapbox styles available by default
      */
     private static readonly DEFAULT_STYLES: ReadonlyArray<MapboxStyleDefinition> = [
-        { title: 'Dark', uri: 'mapbox://styles/mapbox/dark-v10' },
-        { title: 'Light', uri: 'mapbox://styles/mapbox/light-v10' },
-        { title: 'Outdoors', uri: 'mapbox://styles/mapbox/outdoors-v11' },
-        { title: 'Satellite', uri: 'mapbox://styles/mapbox/satellite-streets-v11' },
-        { title: 'Streets', uri: 'mapbox://styles/mapbox/streets-v11' },
+        { title: 'Dark', uri: 'mapbox://styles/mapbox/dark-v11' },
+        { title: 'Light', uri: 'mapbox://styles/mapbox/light-v11' },
+        { title: 'Outdoors', uri: 'mapbox://styles/mapbox/outdoors-v12' },
+        { title: 'Satellite', uri: 'mapbox://styles/mapbox/satellite-streets-v12' },
+        { title: 'Streets', uri: 'mapbox://styles/mapbox/streets-v12' },
     ] as const;
 
     /** Main container element for the control */
@@ -129,7 +130,7 @@ export class MapboxStyleSwitcherControl implements IControl {
         if (!styleExists) {
             console.warn(
                 `MapboxStyleSwitcherControl: Default style "${this.defaultStyle}" not found in styles array. ` +
-                    `Available styles: ${this.styles.map((s) => s.title).join(', ')}`
+                    `Available styles: ${this.styles.map((s) => s.title).join(', ')}`,
             );
         }
     }
@@ -198,6 +199,7 @@ export class MapboxStyleSwitcherControl implements IControl {
     private createStyleContainer(): HTMLElement {
         const container = document.createElement('div');
         container.classList.add('mapboxgl-style-list');
+        container.setAttribute('role', 'menu');
         return container;
     }
 
@@ -209,6 +211,9 @@ export class MapboxStyleSwitcherControl implements IControl {
         const button = document.createElement('button');
         button.type = 'button';
         button.classList.add('mapboxgl-ctrl-icon', 'mapboxgl-style-switcher');
+        button.setAttribute('aria-label', 'Switch map style');
+        button.setAttribute('aria-haspopup', 'true');
+        button.setAttribute('aria-expanded', 'false');
         return button;
     }
 
@@ -237,14 +242,15 @@ export class MapboxStyleSwitcherControl implements IControl {
     private createIndividualStyleButton(style: MapboxStyleDefinition): HTMLButtonElement {
         const styleButton = document.createElement('button');
         styleButton.type = 'button';
-        styleButton.innerText = style.title;
+        styleButton.setAttribute('role', 'menuitem');
+        styleButton.textContent = style.title;
 
         // Create CSS-safe class name from title
         const safeClassName = style.title.replace(/[^a-z0-9-]/gi, '_');
         styleButton.classList.add(safeClassName);
 
         // Store style URI in dataset
-        styleButton.dataset.uri = JSON.stringify(style.uri);
+        styleButton.dataset.uri = style.uri;
 
         // Set up click event handler
         styleButton.addEventListener('click', (event) => {
@@ -334,7 +340,43 @@ export class MapboxStyleSwitcherControl implements IControl {
 
         // Handle clicks outside the control (closes dropdown)
         document.addEventListener('click', this.onDocumentClick);
+
+        // Set up keyboard navigation within the dropdown
+        this.setupKeyboardNavigation();
     }
+
+    /**
+     * Sets up keyboard navigation for the style dropdown.
+     * ArrowDown/ArrowUp move focus between options; Escape closes the dropdown.
+     * @private
+     */
+    private setupKeyboardNavigation(): void {
+        if (!this.mapStyleContainer) {
+            return;
+        }
+
+        this.mapStyleContainer.addEventListener('keydown', (event: KeyboardEvent) => {
+            const buttons = Array.from(this.mapStyleContainer!.querySelectorAll<HTMLButtonElement>('button'));
+            const focusedIndex = buttons.findIndex((btn) => btn === document.activeElement);
+
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    buttons[(focusedIndex + 1) % buttons.length]?.focus();
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    buttons[(focusedIndex - 1 + buttons.length) % buttons.length]?.focus();
+                    break;
+                case 'Escape':
+                    event.preventDefault();
+                    this.closeModal();
+                    this.styleButton?.focus();
+                    break;
+            }
+        });
+    }
+
     /**
      * Called when the control is removed from a map
      * Part of the IControl interface implementation
@@ -364,6 +406,7 @@ export class MapboxStyleSwitcherControl implements IControl {
         if (this.mapStyleContainer && this.styleButton) {
             this.mapStyleContainer.style.display = 'none';
             this.styleButton.style.display = 'block';
+            this.styleButton.setAttribute('aria-expanded', 'false');
         }
     }
 
@@ -375,6 +418,12 @@ export class MapboxStyleSwitcherControl implements IControl {
         if (this.mapStyleContainer && this.styleButton) {
             this.mapStyleContainer.style.display = 'block';
             this.styleButton.style.display = 'none';
+            this.styleButton.setAttribute('aria-expanded', 'true');
+
+            // Focus the active style button, or the first button if none is active
+            const activeButton = this.mapStyleContainer.querySelector<HTMLButtonElement>('button.active');
+            const firstButton = this.mapStyleContainer.querySelector<HTMLButtonElement>('button');
+            (activeButton ?? firstButton)?.focus();
         }
     }
 
@@ -405,12 +454,11 @@ export class MapboxStyleSwitcherControl implements IControl {
             return null;
         }
 
-        try {
-            const uri = JSON.parse(activeButton.dataset.uri);
-            return this.styles.find((style) => style.uri === uri) || null;
-        } catch {
+        const uri = activeButton.dataset.uri;
+        if (!uri) {
             return null;
         }
+        return this.styles.find((style) => style.uri === uri) || null;
     }
 
     /**
@@ -429,9 +477,9 @@ export class MapboxStyleSwitcherControl implements IControl {
 
             // Update UI to reflect the change
             if (this.mapStyleContainer) {
-                const targetButton = this.mapStyleContainer.querySelector(
-                    `[data-uri="${JSON.stringify(targetStyle.uri)}"]`
-                ) as HTMLButtonElement;
+                const targetButton = Array.from(this.mapStyleContainer.querySelectorAll<HTMLButtonElement>('button')).find(
+                    (btn) => btn.dataset.uri === targetStyle.uri,
+                );
 
                 if (targetButton) {
                     this.updateActiveStyleButton(targetButton);

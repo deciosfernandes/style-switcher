@@ -10,7 +10,7 @@ export interface MapboxStyleSwitcherOptions {
 export interface MapboxStyleSwitcherEvents {
     onOpen?: (event: MouseEvent) => boolean;
     onSelect?: (event: MouseEvent) => boolean;
-    onChange?: (event: MouseEvent, style: string) => boolean;
+    onChange?: (event: MouseEvent, style: string) => void;
 }
 export declare class MapboxStyleSwitcherControl implements IControl {
     private static readonly DEFAULT_STYLE;
@@ -34,6 +34,7 @@ export declare class MapboxStyleSwitcherControl implements IControl {
     private handleStyleButtonClick;
     private updateActiveStyleButton;
     private setupEventListeners;
+    private setupKeyboardNavigation;
     onRemove(): void;
     private closeModal;
     private openModal;
