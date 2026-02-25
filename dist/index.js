@@ -1,16 +1,13 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MapboxStyleSwitcherControl = void 0;
-class MapboxStyleSwitcherControl {
+export class MapboxStyleSwitcherControl {
     constructor(styles, options) {
         this.controlContainer = null;
         this.map = null;
         this.mapStyleContainer = null;
         this.styleButton = null;
         this.styles = styles || MapboxStyleSwitcherControl.DEFAULT_STYLES;
-        const defaultStyle = typeof options === 'string' ? options : options === null || options === void 0 ? void 0 : options.defaultStyle;
-        this.defaultStyle = defaultStyle !== null && defaultStyle !== void 0 ? defaultStyle : MapboxStyleSwitcherControl.DEFAULT_STYLE;
-        this.events = typeof options !== 'string' ? options === null || options === void 0 ? void 0 : options.eventListeners : undefined;
+        const defaultStyle = typeof options === 'string' ? options : options?.defaultStyle;
+        this.defaultStyle = defaultStyle ?? MapboxStyleSwitcherControl.DEFAULT_STYLE;
+        this.events = typeof options !== 'string' ? options?.eventListeners : undefined;
         this.onDocumentClick = this.onDocumentClick.bind(this);
         this.validateDefaultStyle();
     }
@@ -84,13 +81,12 @@ class MapboxStyleSwitcherControl {
         return styleButton;
     }
     handleStyleButtonClick(event, style) {
-        var _a, _b, _c, _d;
         const target = event.target;
         this.closeModal();
         if (target.classList.contains('active')) {
             return;
         }
-        if ((_b = (_a = this.events) === null || _a === void 0 ? void 0 : _a.onSelect) === null || _b === void 0 ? void 0 : _b.call(_a, event)) {
+        if (this.events?.onSelect?.(event)) {
             return;
         }
         try {
@@ -99,7 +95,7 @@ class MapboxStyleSwitcherControl {
             }
             this.map.setStyle(style.uri);
             this.updateActiveStyleButton(target);
-            (_d = (_c = this.events) === null || _c === void 0 ? void 0 : _c.onChange) === null || _d === void 0 ? void 0 : _d.call(_c, event, style.uri);
+            this.events?.onChange?.(event, style.uri);
         }
         catch (error) {
             console.error('Failed to change map style:', error);
@@ -118,8 +114,7 @@ class MapboxStyleSwitcherControl {
             throw new Error('Style button not initialized');
         }
         this.styleButton.addEventListener('click', (event) => {
-            var _a, _b;
-            if ((_b = (_a = this.events) === null || _a === void 0 ? void 0 : _a.onOpen) === null || _b === void 0 ? void 0 : _b.call(_a, event)) {
+            if (this.events?.onOpen?.(event)) {
                 return;
             }
             this.openModal();
@@ -127,9 +122,8 @@ class MapboxStyleSwitcherControl {
         document.addEventListener('click', this.onDocumentClick);
     }
     onRemove() {
-        var _a;
         document.removeEventListener('click', this.onDocumentClick);
-        if ((_a = this.controlContainer) === null || _a === void 0 ? void 0 : _a.parentNode) {
+        if (this.controlContainer?.parentNode) {
             this.controlContainer.parentNode.removeChild(this.controlContainer);
         }
         this.map = null;
@@ -167,7 +161,7 @@ class MapboxStyleSwitcherControl {
             const uri = JSON.parse(activeButton.dataset.uri);
             return this.styles.find((style) => style.uri === uri) || null;
         }
-        catch (_a) {
+        catch {
             return null;
         }
     }
@@ -195,7 +189,6 @@ class MapboxStyleSwitcherControl {
         return this.styles;
     }
 }
-exports.MapboxStyleSwitcherControl = MapboxStyleSwitcherControl;
 MapboxStyleSwitcherControl.DEFAULT_STYLE = 'Streets';
 MapboxStyleSwitcherControl.DEFAULT_STYLES = [
     { title: 'Dark', uri: 'mapbox://styles/mapbox/dark-v10' },
